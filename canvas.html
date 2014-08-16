@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>A simple multi-user whiteboard</title>
+    <style>
+        .whiteboard-canvas {
+            margin: 0 auto;
+            border: 1px solid yellowgreen
+        }
+
+        #clear {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    // Keep everything we need outside global scope
+    var App = {};
+    // Init socket.io
+    App.socket = io.connect('http://localhost');
+    // Flag to indicate whether we're currently drawing or not
+    App._startedDrawing = false;
+
+    /**
+     * Do the draw. Acts differently
+     * depending on event type passed.
+     */
+    App.draw = function (data) {
+        var originalColor = App.ctx.strokeStyle;
+        App.ctx.strokeStyle = data.color;
+        if (data.type == "mousedown") { // Start drawing
+            App.ctx.beginPath();
+            App.ctx.moveTo(data.x, data.y)
+        } else if (data.type == "mouseup") { // Stop drawing
+            App.ctx.stroke();
+            App.ctx.closePath();
+            App._startedDrawing = false;
+            App.socket.emit('save-data', App.whiteboard[0].toDataURL());
+        } else { // Continue
+            App.ctx.lineTo(data.x, data.y);
+            App.ctx.stroke();
+        }
+        App.ctx.strokeStyle = originalColor;
+    };
+
+    /**
+     * We want to draw whenever we receive
+     * 'draw' event from other sockets as well.
+     */
+    App.socket.on('draw', App.draw);
+
+    /**
+     * Clears the canvas.
+     */
+    App.clear = function () {
+        App.ctx.clearRect(0, 0, App.whiteboard[0].width, App.whiteboard[0].height);
+    };
+    App.socket.on('clear', App.clear);
+
+    /**
+     * Fetch color that this user should
+     * use for drawing.
+     */
+    App.socket.on('setup', function (color, dataUrl) {
+        App.ctx.strokeStyle = color;
+        if (dataUrl) {
+            // load image from data url
+            var imageObj = new Image();
+            imageObj.onload = function () {
+                App.ctx.drawImage(this, 0, 0);
+            };
+            imageObj.src = dataUrl;
+        }
+    });
+
+    /**
+     * Bind mouse events to our canvas once DOM has loaded.
+     * At this point we are also ready to emit
+     * 'doTheDraw' events.
+     */
+    $(function () {
+        App.whiteboard = $('#whiteboard');
+        App.ctx = App.whiteboard[0].getContext("2d");
+
+        // Connect mouse events
+        App.whiteboard.on('mousedown mouseup mousemove', null, function (e) {
+            if (!App._startedDrawing && e.type != "mousedown") return;
+            App._startedDrawing = true;
+            var offset = $(this).offset();
+            var data = {
+                x: (e.pageX - offset.left),
+                y: (e.pageY - offset.top),
+                type: e.handleObj.type,
+                color: App.ctx.strokeStyle,
+                imageData: App.whiteboard[0].toDataURL()
+            };
+            App.draw(data); // Draw yourself.
+            App.socket.emit('do-the-draw', data); // Broadcast draw.
+        });
+        // Clear button
+        $('#clear').on('click', function () {
+            App.clear(); // Clear our screen
+            App.socket.emit('clear'); // Broadcast clear.
+        });
+    });
+</script>
+<p>This is a public whiteboard. Draw responsibly!</p>
+<canvas id="whiteboard" width="800px" height="400px" class="whiteboard-canvas"></canvas>
+<button id="clear">Clear this up</button>
+</body>
+</html>

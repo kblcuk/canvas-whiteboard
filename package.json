@@ -1,0 +1,17 @@
+{
+    "name": "canvas-whiteboard",
+    "description": "This is an example of multiuser canvas wired with sockets.",
+    "author": "Alexei Mikhailov <kblcuk@gmail.com>",
+    "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/kblcuk/canvas-whiteboard"
+    },
+    "scripts": {
+        "start": "node app.js"
+    },
+    "dependencies": {
+        "express": "~4.8.4",
+        "socket.io": "~1.0.6"
+    }
+}
