@@ -1,7 +1,7 @@
 # Canvas whiteboard
 This is an example of canvas accessible (and editable) by multiple users.
 
-This time I wanted to learn something about sockets, namely (http://socket.io)(Socket.Io) framework,
+This time I wanted to learn something about sockets, namely [Socket.Io](http://socket.io) framework,
 hence I did the backend using it together with Express.
 
 ## Running
