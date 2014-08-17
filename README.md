@@ -9,5 +9,7 @@ If you (for some reason) want to run this, make sure you have Node installed. Th
 * Clone this repo with `git clone`
 * Run `npm install` from project's root
 * Once npm finishes, run `node app.js`
+* Open your browser, go to `http://localhost:3210`, and you shall see the whiteboard.
+Try opening several tabs pointing to that address, draw, and see what happens.
 
 Have fun!
